@@ -1,11 +1,12 @@
 import copy
+import os
 
 import click as click
 import openpyxl
 from openpyxl.utils import get_column_letter
 
 
-def copy_xlsx(path: str, save_path: str):
+def _copy_xlsx(path: str, save_path: str):
     wb = openpyxl.load_workbook(path)
     wb2 = openpyxl.Workbook()
 
@@ -56,11 +57,44 @@ def copy_xlsx(path: str, save_path: str):
     print('Done.')
 
 
+def check_file_extend(file_name, file_ext):
+    if not str(file_name).endswith(file_ext):
+        raise ValueError("invalid file extend, file is " + file_name + ", ext is " + file_ext)
+
+
+def copy_file(src, target, file_ext='xlsx'):
+    check_file_extend(src, file_ext)
+    check_file_extend(target, file_ext)
+    _copy_xlsx(src, target)
+
+
+def copy_dir(src, target, file_ext='xlsx'):
+    if not os.path.isdir(target):
+        print("create directory " + target)
+        os.mkdir(target)
+
+    files = os.listdir(src)
+    for file in files:
+        if os.path.isdir(file) or not str(file).endswith(file_ext):
+            continue
+        src_file = src + os.sep + file
+        dst_file = target + os.sep + file
+        copy_file(src_file, dst_file)
+
+
+def test(mode, src, dst):
+    copy_handler = copy_dir if 'dir' == mode else copy_file
+    copy_handler(src, dst)
+
+
 @click.command()
+@click.option('--mode', '-m', help='mode', default='dir')
 @click.option('--src', "-s", help='source file', required=True)
 @click.option('--target', "-t", help='target file', required=True)
-def main(src, dst):
-    copy_xlsx(src, dst)
+@click.option('--file_ext', "-e", help='file extend', default='xlsx')
+def main(mode, src, dst, file_ext):
+    copy_handler = copy_dir if 'dir' == mode else copy_file
+    copy_handler(src, dst, file_ext)
 
 
 if __name__ == "__main__":
