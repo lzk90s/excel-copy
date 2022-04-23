@@ -1,12 +1,11 @@
-import copy
-import os
-
 import click as click
+import copy
 import openpyxl
+import os
 from openpyxl.utils import get_column_letter
 
 
-def _copy_xlsx(path: str, save_path: str):
+def _copy_xlsx(path: str, save_path: str, copy_image=True):
     wb = openpyxl.load_workbook(path)
     wb2 = openpyxl.Workbook()
 
@@ -47,6 +46,10 @@ def _copy_xlsx(path: str, save_path: str):
                     target_cell.protection = copy.copy(source_cell.protection)
                     target_cell.alignment = copy.copy(source_cell.alignment)
 
+        if copy_image:
+            for image in sheet._images:
+                sheet2.add_image(image)
+
     if 'Sheet' in wb2.sheetnames:
         del wb2['Sheet']
     wb2.save(save_path)
@@ -62,13 +65,13 @@ def check_file_extend(file_name, file_ext):
         raise ValueError("invalid file extend, file is " + file_name + ", ext is " + file_ext)
 
 
-def copy_file(src, target, file_ext='xlsx'):
+def copy_file(src, target, file_ext='xlsx', copy_image=True):
     check_file_extend(src, file_ext)
     check_file_extend(target, file_ext)
-    _copy_xlsx(src, target)
+    _copy_xlsx(src, target, copy_image)
 
 
-def copy_dir(src, target, file_ext='xlsx'):
+def copy_dir(src, target, file_ext='xlsx', copy_image=True):
     if not os.path.isdir(target):
         print("create directory " + target)
         os.mkdir(target)
@@ -79,7 +82,7 @@ def copy_dir(src, target, file_ext='xlsx'):
             continue
         src_file = src + os.sep + file
         dst_file = target + os.sep + file
-        copy_file(src_file, dst_file)
+        copy_file(src_file, dst_file, file_ext, copy_image)
 
 
 def test(mode, src, dst):
@@ -92,9 +95,10 @@ def test(mode, src, dst):
 @click.option('--src', "-s", help='source file', required=True)
 @click.option('--target', "-t", help='target file', required=True)
 @click.option('--file_ext', "-e", help='file extend', default='xlsx')
-def main(mode, src, dst, file_ext):
+@click.option('--copy_image', '-i', help='copy image', default=True)
+def main(mode, src, dst, file_ext, copy_image):
     copy_handler = copy_dir if 'dir' == mode else copy_file
-    copy_handler(src, dst, file_ext)
+    copy_handler(src, dst, file_ext, copy_image)
 
 
 if __name__ == "__main__":
