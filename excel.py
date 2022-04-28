@@ -4,16 +4,16 @@ import openpyxl
 from openpyxl.utils import get_column_letter
 
 
-def get_sheet_max_row(wb, sheet_name):
+def get_sheet_max_row(wb: openpyxl.Workbook, sheet_name: str) -> int:
     sheet = wb[sheet_name]
     return sheet.max_row
 
 
-def write_xlsx(path: str, excel_sheet_datas: list):
+def write_xlsx(path: str, sheet_datas: list):
     workbook = openpyxl.Workbook()
 
-    for i in range(0, len(excel_sheet_datas), 1):
-        s = excel_sheet_datas[i]
+    for i in range(0, len(sheet_datas), 1):
+        s = sheet_datas[i]
         sheet_title = s['title']
         info = s['info']
         data = s['data']
@@ -51,6 +51,13 @@ def get_xlsx_total_rows(path: str):
         row = get_sheet_max_row(wb, sheet_name)
         total_row += row - 1
     return total_row
+
+
+def xlsx_sheet_sort_by_title(path: str):
+    wb = openpyxl.load_workbook(path)
+    wb._sheets.sort(key=lambda x: x.title)
+    wb.save(path)
+    print("Sort file " + path)
 
 
 def copy_xlsx(path: str, save_path: str, copy_image=True):
