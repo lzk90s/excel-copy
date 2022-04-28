@@ -27,16 +27,12 @@ def list_dir_files(dir_path: str, file_ext):
     return res
 
 
-def sort_file(path: str, file_ext):
-    check_file_ext(path, file_ext)
-    xlsx_sheet_sort_by_title(path)
-
-
-def sort_dir(path, file_ext='xlsx'):
-    files = list_dir_files(path, file_ext)
+def sort_xlsx(dir_path, file_ext='xlsx'):
+    files = list_dir_files(dir_path, file_ext)
     for file in files:
-        p = path + os.sep + file
-        sort_file(p, file_ext)
+        path = dir_path + os.sep + file
+        check_file_ext(path, file_ext)
+        xlsx_sheet_sort_by_title(path)
 
 
 def generate_summary_file(dir_path: str, file_ext='xlsx'):
@@ -69,6 +65,6 @@ def statistic_xlsx_rows(dir_path: str, file_ext='xlsx'):
 if __name__ == "__main__":
     file_ext = 'xlsx'
     d = '/Users/kun/Desktop/市民卡业务带图'
-    sort_dir(d, file_ext)
+    sort_xlsx(d, file_ext)
     generate_summary_file(d, file_ext)
     statistic_xlsx_rows(d, file_ext)
