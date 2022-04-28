@@ -67,6 +67,7 @@ def statistic_xlsx_rows(dir_path: str, file_ext='xlsx'):
 
 if __name__ == "__main__":
     file_ext = 'xlsx'
-    copy_dir('/Users/kun/Desktop/市民卡业务带图', '/Users/kun/Desktop/市民卡业务带图', file_ext)
-    generate_summary_file('/Users/kun/Desktop/市民卡业务带图', file_ext)
-    statistic_xlsx_rows('/Users/kun/Desktop/市民卡业务带图', file_ext)
+    d='/Users/kun/Desktop/市民卡业务带图'
+    copy_dir(d, d, file_ext)
+    generate_summary_file(d, file_ext)
+    statistic_xlsx_rows(d, file_ext)
