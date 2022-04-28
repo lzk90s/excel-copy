@@ -46,12 +46,15 @@ def generate_summary_file(dir_path: str, file_ext='xlsx'):
     files = list_dir_files(dir_path, file_ext)
     for file in files:
         src_file = dir_path + os.sep + file
-        row_details = get_xlsx_row_detail(src_file)
-        info = ['点位', '数量']
+        rows = get_xlsx_row_detail(src_file)
+        if not rows:
+            continue
+        rows.append(['', ''])
+        rows.append(['总计', get_xlsx_total_rows(src_file)])
         s = {
             'title': file,
-            'info': info,
-            'data': row_details
+            'info': ['点位', '数量'],
+            'data': rows
         }
         sheet_datas.append(s)
     write_xlsx(dir_path + os.sep + SUMMARY_XLSX_FILE, sheet_datas)
