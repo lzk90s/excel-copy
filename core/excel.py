@@ -1,13 +1,36 @@
 import copy
 
 import openpyxl
+from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
+from core.util import defer
 
-def _get_max_row(ws: Worksheet, column_index: int, ignore_head=True) -> int:
+__wb_cache = {}
+
+
+def _get_column_idx_by_head(ws: Worksheet, name: str, head_row_idx=1):
+    for i in range(1, ws.max_column + 1, 1):
+        c = ws.cell(head_row_idx, i).value
+        if c == name:
+            return i
+    return None
+
+
+def load_workbook(path: str):
+    v = None
+    if path in __wb_cache.keys():
+        v = __wb_cache.get(path)
+    else:
+        v = openpyxl.load_workbook(path)
+    return v
+
+
+def get_max_row(ws: Worksheet, column_name: str, ignore_head=True) -> int:
     count = 0
     begin = 2 if ignore_head else 1
+    column_index = _get_column_idx_by_head(ws, column_name)
     for i in range(begin, ws.max_row + 1, 1):
         v = ws.cell(i, column_index).value
         if v is not None:
@@ -15,16 +38,30 @@ def _get_max_row(ws: Worksheet, column_index: int, ignore_head=True) -> int:
     return count
 
 
-def load_workbook(path: str):
-    return openpyxl.load_workbook(path)
+def get_column_one_non_blank_value(ws: Worksheet, column_name: str, ignore_head=True):
+    begin = 2 if ignore_head else 1
+    column_index = _get_column_idx_by_head(ws, column_name)
+    for i in range(begin, ws.max_row + 1, 1):
+        v = ws.cell(i, column_index).value
+        if v is not None:
+            return v
+    return None
 
 
-def get_row_detail(path: str, column_index: int, ignore_head=True) -> list:
+def close_workbook(wb: Workbook):
+    p = wb.path
+    if p in __wb_cache.keys():
+        __wb_cache.pop(p)
+    wb.close()
+
+
+def parse_sheets(path: str, sheet_parser) -> list:
     wb = load_workbook(path)
     result = []
     for sheet_name in wb.sheetnames:
-        row = _get_max_row(wb[sheet_name], column_index, ignore_head)
-        result.append([sheet_name, row])
+        r = sheet_parser(wb[sheet_name])
+        assert isinstance(r, list)
+        result.append(r)
     return result
 
 
@@ -44,11 +81,11 @@ def get_cell_value(path: str, sheet_name: str, row: int, column: int):
     return ws.cell(row, column).value
 
 
-def get_total_rows(path: str, column_index: int, ignore_head=True):
+def get_total_rows(path: str, column_name: str, ignore_head=True):
     wb = load_workbook(path)
     total_row = 0
     for sheet_name in wb.sheetnames:
-        row = _get_max_row(wb[sheet_name], column_index, ignore_head)
+        row = get_max_row(wb[sheet_name], column_name, ignore_head)
         total_row += row
     return total_row
 
@@ -118,10 +155,10 @@ def write_workbook(path: str, sheet_datas: list):
 
     for i in range(0, len(sheet_datas), 1):
         s = sheet_datas[i]
-        sheet_title = s['title']
-        info = s['info']
+        sheet_name = s['sheet_name']
+        info = s['head']
         data = s['data']
-        sheet = workbook.create_sheet(sheet_title, index=i)
+        sheet = workbook.create_sheet(sheet_name, index=i)
         sheet.column_dimensions['A'].width = 30
         # 添加表头（不需要表头可以不用加）
         data.insert(0, list(info))

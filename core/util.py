@@ -1,3 +1,4 @@
+import contextlib
 import os
 
 
@@ -25,3 +26,14 @@ def list_dir_files(dir_path: str, filter_exts: list, exclude_exts: list):
         path = dir_path + os.sep + file
         res.append(path)
     return res
+
+
+def defer(*callbacks):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            with contextlib.ExitStack() as stack:
+                for callback in callbacks:
+                    stack.callback(callback)
+                return func(*args, **kwargs)
+        return wrapper
+    return decorator
