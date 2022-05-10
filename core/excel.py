@@ -1,11 +1,12 @@
 import copy
+from types import LambdaType
 
 import openpyxl
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
-from core.util import defer
+from core.defer import defer
 
 __wb_cache = {}
 
@@ -19,11 +20,11 @@ def _get_column_idx_by_head(ws: Worksheet, name: str, head_row_idx=1):
 
 
 def load_workbook(path: str):
-    v = None
     if path in __wb_cache.keys():
         v = __wb_cache.get(path)
     else:
         v = openpyxl.load_workbook(path)
+        __wb_cache[path] = v
     return v
 
 
@@ -48,14 +49,14 @@ def get_column_one_non_blank_value(ws: Worksheet, column_name: str, ignore_head=
     return None
 
 
-def close_workbook(wb: Workbook):
-    p = wb.path
-    if p in __wb_cache.keys():
-        __wb_cache.pop(p)
-    wb.close()
+def close_workbook(wb: Workbook, path: str):
+    # if path in __wb_cache.keys():
+    #     __wb_cache.pop(path)
+    # wb.close()
+    pass
 
 
-def parse_sheets(path: str, sheet_parser) -> list:
+def parse_sheets(path: str, sheet_parser: LambdaType) -> list:
     wb = load_workbook(path)
     result = []
     for sheet_name in wb.sheetnames:
@@ -67,6 +68,7 @@ def parse_sheets(path: str, sheet_parser) -> list:
 
 def check_cell_value(path: str, row: int, column: int, v: str):
     wb = load_workbook(path)
+    defer(lambda: close_workbook(wb, path))
     for sheet_name in wb.sheetnames:
         ws = wb[sheet_name]
         if v != ws.cell(row, column).value:
@@ -76,6 +78,7 @@ def check_cell_value(path: str, row: int, column: int, v: str):
 
 def get_cell_value(path: str, sheet_name: str, row: int, column: int):
     wb = load_workbook(path)
+    defer(lambda: close_workbook(wb, path))
     ws = wb[sheet_name]
     assert isinstance(ws, Worksheet)
     return ws.cell(row, column).value
@@ -83,6 +86,7 @@ def get_cell_value(path: str, sheet_name: str, row: int, column: int):
 
 def get_total_rows(path: str, column_name: str, ignore_head=True):
     wb = load_workbook(path)
+    defer(lambda: close_workbook(wb, path))
     total_row = 0
     for sheet_name in wb.sheetnames:
         row = get_max_row(wb[sheet_name], column_name, ignore_head)
@@ -92,6 +96,7 @@ def get_total_rows(path: str, column_name: str, ignore_head=True):
 
 def sort_by_title(path: str, sort_key):
     wb = load_workbook(path)
+    defer(lambda: close_workbook(wb, path))
     wb._sheets.sort(key=sort_key)
     wb.save(path)
     print("Sort file " + path)
@@ -168,4 +173,5 @@ def write_workbook(path: str, sheet_datas: list):
                 sheet.cell(row=row_index + 1, column=col_index + 1, value=col_item)
 
     workbook.save(path)
+    workbook.close()
     print('写入成功: ' + path)

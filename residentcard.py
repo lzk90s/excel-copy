@@ -1,5 +1,6 @@
-from core import excel
 import datetime
+
+from core import excel
 from core.util import *
 
 # 序号列索引
@@ -12,7 +13,7 @@ NAME_COLUMN_NAME = '姓名'
 
 def parse_sheet_name(sheet_name: str):
     ss = sheet_name.split('-')
-    date = datetime.datetime.strptime(ss[0], "%m.%d")
+    date = datetime.datetime.strptime('2022.' + ss[0], "%Y.%m.%d")
     address = ss[1]
     operator = '未知' if len(ss) < 3 else ss[2]
 
@@ -76,7 +77,8 @@ def generate_personal_performance(files: str, out_file):
             sheet_name = r[0]
             total_num = r[1]
             date, address, operator = parse_sheet_name(sheet_name)
-            tmp_row = [sheet_name, total_num]
+            week = date.strftime('%W')
+            tmp_row = [sheet_name, total_num, week]
             if operator in operator_map.keys():
                 operator_map.get(operator).append(tmp_row)
             else:
@@ -85,10 +87,20 @@ def generate_personal_performance(files: str, out_file):
 
     for k, v in operator_map.items():
         v.sort(key=lambda x: default_sort_key(x[0]))
+
+        data = []
+        data.append(v[0])
+        for i in range(1, len(v), 1):
+            week0 = v[i - 1][2]
+            week1 = v[i][2]
+            if week0 != week1:
+                data.append(['', '', ''])
+            data.append(v[i])
+
         s = {
             'sheet_name': k,
-            'head': ['点位', '数量'],
-            'data': v
+            'head': ['点位', '数量', '第几周'],
+            'data': data
         }
         sheet_datas.append(s)
     excel.write_workbook(out_file, sheet_datas)
