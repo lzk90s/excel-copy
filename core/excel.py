@@ -163,10 +163,14 @@ def write_workbook(path: str, sheet_datas: list):
         sheet_name = s['sheet_name']
         info = s['head']
         data = s['data']
+        column_dimensions = s['column_dimensions']
         sheet = workbook.create_sheet(sheet_name, index=i)
         sheet.column_dimensions['A'].width = 30
         # 添加表头（不需要表头可以不用加）
         data.insert(0, list(info))
+
+        for j in range(0, len(column_dimensions), 1):
+            sheet.column_dimensions[get_column_letter(j+1)].width = column_dimensions[j]
 
         for row_index, row_item in enumerate(data):
             for col_index, col_item in enumerate(row_item):
