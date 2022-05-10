@@ -58,7 +58,7 @@ def generate_summary_file(files: str, out_file):
         s = {
             'sheet_name': file_name,
             'head': ['点位', '数量'],
-            'column_dimensions': [30, 20],
+            'column_dimensions': [30, 10],
             'data': rows
         }
         sheet_datas.append(s)

@@ -50,9 +50,9 @@ def get_column_one_non_blank_value(ws: Worksheet, column_name: str, ignore_head=
 
 
 def close_workbook(wb: Workbook, path: str):
-    # if path in __wb_cache.keys():
-    #     __wb_cache.pop(path)
-    # wb.close()
+    if path in __wb_cache.keys():
+        __wb_cache.pop(path)
+    wb.close()
     pass
 
 
@@ -161,20 +161,19 @@ def write_workbook(path: str, sheet_datas: list):
     for i in range(0, len(sheet_datas), 1):
         s = sheet_datas[i]
         sheet_name = s['sheet_name']
-        info = s['head']
+        head = s['head']
         data = s['data']
         column_dimensions = s['column_dimensions']
-        sheet = workbook.create_sheet(sheet_name, index=i)
-        sheet.column_dimensions['A'].width = 30
-        # 添加表头（不需要表头可以不用加）
-        data.insert(0, list(info))
+        ws = workbook.create_sheet(sheet_name, index=i)
+        if head:
+            data.insert(0, list(head))
 
         for j in range(0, len(column_dimensions), 1):
-            sheet.column_dimensions[get_column_letter(j+1)].width = column_dimensions[j]
+            ws.column_dimensions[get_column_letter(j + 1)].width = column_dimensions[j]
 
         for row_index, row_item in enumerate(data):
             for col_index, col_item in enumerate(row_item):
-                sheet.cell(row=row_index + 1, column=col_index + 1, value=col_item)
+                ws.cell(row=row_index + 1, column=col_index + 1, value=col_item)
 
     workbook.save(path)
     workbook.close()
