@@ -1,3 +1,4 @@
-# excel-copy
+# gogogo
 
-copy excel with style
+- erp
+- ocr

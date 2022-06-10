@@ -1,13 +1,13 @@
 import datetime
 
-from core import excel
-from core.util import *
+import excel
+from util import *
 
 # 序号列索引
-SERIAL_NO_COLUMN_INDEX = 2
+SERIAL_NO_COLUMN_INDEX = 1
 SERIAL_NO_COLUMN_NAME = '序号'
 # 名字列索引
-NAME_COLUMN_INDEX = 3
+NAME_COLUMN_INDEX = 2
 NAME_COLUMN_NAME = '姓名'
 
 
@@ -109,6 +109,10 @@ def generate_personal_performance(files: str, out_file):
     excel.write_workbook(out_file, sheet_datas)
 
 
+def recreate_xlsx_4_wenxin(files: str):
+    pass
+
+
 def print_xlsx_rows(files: str):
     for file in files:
         total_line = excel.get_total_rows(file, SERIAL_NO_COLUMN_NAME)
@@ -125,3 +129,4 @@ if __name__ == "__main__":
     print_xlsx_rows(files)
     generate_summary_file(files, d + os.sep + '汇总.xlsx')
     generate_personal_performance(files, d + os.sep + '绩效.xlsx')
+    recreate_xlsx_4_wenxin(files)

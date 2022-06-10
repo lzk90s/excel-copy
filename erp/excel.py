@@ -6,7 +6,7 @@ from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
-from core.defer import defer
+from defer import defer
 
 __wb_cache = {}
 
