@@ -9,6 +9,9 @@ SERIAL_NO_COLUMN_NAME = '序号'
 # 名字列索引
 NAME_COLUMN_INDEX = 2
 NAME_COLUMN_NAME = '姓名'
+# 手机列索引
+PHONE_COLUMN_INDEX = 3
+PHONE_COLUMN_NAME = '电话'
 
 
 def parse_sheet_name(sheet_name: str):
@@ -24,6 +27,7 @@ def validate_xlsx(files):
     for file in files:
         assert excel.check_cell_value(file, 1, SERIAL_NO_COLUMN_INDEX, SERIAL_NO_COLUMN_NAME) is True, file
         assert excel.check_cell_value(file, 1, NAME_COLUMN_INDEX, NAME_COLUMN_NAME) is True, file
+        assert excel.check_cell_value(file, 1, PHONE_COLUMN_INDEX, PHONE_COLUMN_NAME) is True, file
 
         d1 = excel.parse_sheets(file, lambda ws: [ws.title, excel.get_max_row(ws, SERIAL_NO_COLUMN_NAME)])
         d2 = excel.parse_sheets(file, lambda ws: [ws.title, excel.get_max_row(ws, NAME_COLUMN_NAME)])
@@ -120,7 +124,7 @@ def print_xlsx_rows(files: str):
 
 
 if __name__ == "__main__":
-    d = '/Users/kun/Desktop/市民卡业务带图'
+    d = '/Users/kun/Desktop/市民卡业务'
 
     files = list_dir_files(d, ['.xlsx'], ['汇总.xlsx', '绩效.xlsx'])
 
