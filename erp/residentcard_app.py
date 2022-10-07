@@ -25,9 +25,9 @@ def parse_sheet_name(sheet_name: str):
 
 def validate_xlsx(files):
     for file in files:
-        assert excel.check_cell_value(file, 1, SERIAL_NO_COLUMN_INDEX, SERIAL_NO_COLUMN_NAME) is True, file
-        assert excel.check_cell_value(file, 1, NAME_COLUMN_INDEX, NAME_COLUMN_NAME) is True, file
-        assert excel.check_cell_value(file, 1, PHONE_COLUMN_INDEX, PHONE_COLUMN_NAME) is True, file
+        excel.validate_cell_value(file, 1, SERIAL_NO_COLUMN_INDEX, SERIAL_NO_COLUMN_NAME)
+        excel.validate_cell_value(file, 1, NAME_COLUMN_INDEX, NAME_COLUMN_NAME)
+        excel.validate_cell_value(file, 1, PHONE_COLUMN_INDEX, PHONE_COLUMN_NAME)
 
         d1 = excel.parse_sheets(file, lambda ws: [ws.title, excel.get_max_row(ws, SERIAL_NO_COLUMN_NAME)])
         d2 = excel.parse_sheets(file, lambda ws: [ws.title, excel.get_max_row(ws, NAME_COLUMN_NAME)])
@@ -36,7 +36,7 @@ def validate_xlsx(files):
         for i in range(len(d1)):
             k1 = d1[i]
             k2 = d2[i]
-            assert k1[1] == k2[1], k1[0]
+            assert k1[1] == k2[1], file + ' ' + k1[0]
 
 
 def default_sort_key(title):
@@ -124,7 +124,7 @@ def print_xlsx_rows(files: str):
 
 
 if __name__ == "__main__":
-    d = '/Users/kun/Desktop/市民卡业务'
+    d = '/Users/kun/Desktop/桌面 - kun的MacBook Pro/市民卡地推项目/市民卡业务-邵祥'
 
     files = list_dir_files(d, ['.xlsx'], ['汇总.xlsx', '绩效.xlsx'])
 

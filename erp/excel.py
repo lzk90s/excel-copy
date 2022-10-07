@@ -11,6 +11,11 @@ from defer import defer
 __wb_cache = {}
 
 
+class InvalidCellValue(ValueError):
+    def __init__(self, path, sheet_name, row, column):
+        super().__init__('InvalidCellValue', path, sheet_name, row, column)
+
+
 def _get_column_idx_by_head(ws: Worksheet, name: str, head_row_idx=1):
     for i in range(1, ws.max_column + 1, 1):
         c = ws.cell(head_row_idx, i).value
@@ -66,14 +71,13 @@ def parse_sheets(path: str, sheet_parser: LambdaType) -> list:
     return result
 
 
-def check_cell_value(path: str, row: int, column: int, v: str):
+def validate_cell_value(path: str, row: int, column: int, v: str):
     wb = load_workbook(path)
     defer(lambda: close_workbook(wb, path))
     for sheet_name in wb.sheetnames:
         ws = wb[sheet_name]
         if v != ws.cell(row, column).value:
-            return False
-    return True
+            raise InvalidCellValue(path, sheet_name, row, column)
 
 
 def get_cell_value(path: str, sheet_name: str, row: int, column: int):
