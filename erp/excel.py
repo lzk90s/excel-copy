@@ -8,13 +8,6 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from defer import defer
 
-__wb_cache = {}
-
-
-class InvalidCellValue(ValueError):
-    def __init__(self, path, sheet_name, row, column):
-        super().__init__('InvalidCellValue', path, sheet_name, row, column)
-
 
 def _get_column_idx_by_head(ws: Worksheet, name: str, head_row_idx=1):
     for i in range(1, ws.max_column + 1, 1):
@@ -25,15 +18,14 @@ def _get_column_idx_by_head(ws: Worksheet, name: str, head_row_idx=1):
 
 
 def load_workbook(path: str):
-    if path in __wb_cache.keys():
-        v = __wb_cache.get(path)
-    else:
-        v = openpyxl.load_workbook(path)
-        __wb_cache[path] = v
-    return v
+    return openpyxl.load_workbook(path)
 
 
-def get_max_row(ws: Worksheet, column_name: str, ignore_head=True) -> int:
+def get_all_worksheets(wb):
+    return wb._sheets
+
+
+def calc_worksheet_max_row(ws: Worksheet, column_name: str, ignore_head=True) -> int:
     count = 0
     begin = 2 if ignore_head else 1
     column_index = _get_column_idx_by_head(ws, column_name)
@@ -44,7 +36,7 @@ def get_max_row(ws: Worksheet, column_name: str, ignore_head=True) -> int:
     return count
 
 
-def get_column_one_non_blank_value(ws: Worksheet, column_name: str, ignore_head=True):
+def calc_worksheet_column_one_non_blank_value(ws: Worksheet, column_name: str, ignore_head=True):
     begin = 2 if ignore_head else 1
     column_index = _get_column_idx_by_head(ws, column_name)
     for i in range(begin, ws.max_row + 1, 1):
@@ -54,15 +46,12 @@ def get_column_one_non_blank_value(ws: Worksheet, column_name: str, ignore_head=
     return None
 
 
-def close_workbook(wb: Workbook, path: str):
-    if path in __wb_cache.keys():
-        __wb_cache.pop(path)
+def close_workbook(wb: Workbook):
     wb.close()
     pass
 
 
-def parse_sheets(path: str, sheet_parser: LambdaType) -> list:
-    wb = load_workbook(path)
+def parse_worksheet(wb, sheet_parser: LambdaType) -> list:
     result = []
     for sheet_name in wb.sheetnames:
         r = sheet_parser(wb[sheet_name])
@@ -71,39 +60,30 @@ def parse_sheets(path: str, sheet_parser: LambdaType) -> list:
     return result
 
 
-def validate_cell_value(path: str, row: int, column: int, v: str):
-    wb = load_workbook(path)
-    defer(lambda: close_workbook(wb, path))
-    for sheet_name in wb.sheetnames:
-        ws = wb[sheet_name]
-        if v != ws.cell(row, column).value:
-            raise InvalidCellValue(path, sheet_name, row, column)
-
-
-def get_cell_value(path: str, sheet_name: str, row: int, column: int):
-    wb = load_workbook(path)
-    defer(lambda: close_workbook(wb, path))
-    ws = wb[sheet_name]
+def get_cell_value(ws, row: int, column: int):
     assert isinstance(ws, Worksheet)
     return ws.cell(row, column).value
 
 
-def get_total_rows(path: str, column_name: str, ignore_head=True):
-    wb = load_workbook(path)
-    defer(lambda: close_workbook(wb, path))
+def get_all_worksheet_total_rows(wb: str, column_name: str, ignore_head=True):
     total_row = 0
     for sheet_name in wb.sheetnames:
-        row = get_max_row(wb[sheet_name], column_name, ignore_head)
+        row = calc_worksheet_max_row(wb[sheet_name], column_name, ignore_head)
         total_row += row
     return total_row
 
 
-def sort_by_title(path: str, sort_key):
-    wb = load_workbook(path)
-    defer(lambda: close_workbook(wb, path))
+def sort_by_title(wb, sort_key):
     wb._sheets.sort(key=sort_key)
+
+
+def remove_workbook_sheet(wb, sheet_name):
+    if wb and sheet_name in wb.sheetnames:
+        wb.remove(wb[sheet_name])
+
+
+def save_workbook(wb, path):
     wb.save(path)
-    print("Sort file " + path)
 
 
 def copy_workbook(path: str, save_path: str, copy_image=True):
@@ -159,16 +139,18 @@ def copy_workbook(path: str, save_path: str, copy_image=True):
     print('Done.')
 
 
-def write_workbook(path: str, sheet_datas: list):
-    workbook = openpyxl.Workbook()
-
+def add_worksheet(wb, sheet_datas: list):
     for i in range(0, len(sheet_datas), 1):
         s = sheet_datas[i]
         sheet_name = s['sheet_name']
         head = s['head']
         data = s['data']
         column_dimensions = s['column_dimensions']
-        ws = workbook.create_sheet(sheet_name, index=i)
+
+        if sheet_name in wb.sheetnames:
+            wb.remove(wb[sheet_name])
+
+        ws = wb.create_sheet(sheet_name, index=i)
         if head:
             data.insert(0, list(head))
 
@@ -178,7 +160,3 @@ def write_workbook(path: str, sheet_datas: list):
         for row_index, row_item in enumerate(data):
             for col_index, col_item in enumerate(row_item):
                 ws.cell(row=row_index + 1, column=col_index + 1, value=col_item)
-
-    workbook.save(path)
-    workbook.close()
-    print('写入成功: ' + path)
