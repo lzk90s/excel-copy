@@ -1,174 +1,117 @@
 import datetime
 
-import excel
+from excel import *
 from util import *
 
-# 序号列索引
-SERIAL_NO_COLUMN_INDEX = 1
-SERIAL_NO_COLUMN_NAME = '序号'
-# 名字列索引
-NAME_COLUMN_INDEX = 2
-NAME_COLUMN_NAME = '姓名'
-# 手机列索引
-PHONE_COLUMN_INDEX = 3
-PHONE_COLUMN_NAME = '电话'
+
+class TableColumnDefine:
+    def __init__(self, idx, name):
+        self.idx = idx
+        self.name = name
+
+
+SERIAL_NO_COLUMN = TableColumnDefine(1, '序号')
+NAME_COLUMN = TableColumnDefine(2, '姓名')
+PHONE_COLUMN = TableColumnDefine(3, '电话')
+REMARK_COLUMN = TableColumnDefine(4, '备注')
+RESULT_COLUMN = TableColumnDefine(5, '是否领卡')
 
 SUMMARY_SHEET_NAME = '0汇总'
 
 
-def parse_sheet_name(sheet_name: str):
-    ss = sheet_name.split('-')
-    if not ss:
-        return '0'
-    date = datetime.datetime.strptime('2022.' + ss[0], "%Y.%m.%d")
-    address = ss[1]
-    operator = '未知' if len(ss) < 3 else ss[2]
-
-    return date, address, operator
-
-
 def validate_xlsx(wb):
-    for ws in excel.get_all_worksheets(wb):
-        assert excel.get_cell_value(ws, 1, SERIAL_NO_COLUMN_INDEX) == SERIAL_NO_COLUMN_NAME
-        assert excel.get_cell_value(ws, 1, NAME_COLUMN_INDEX) == NAME_COLUMN_NAME
-        assert excel.get_cell_value(ws, 1, PHONE_COLUMN_INDEX) == PHONE_COLUMN_NAME
-
-    d1 = excel.parse_worksheet(wb, lambda ws: [ws.title,
-                                               excel.calc_worksheet_max_row(ws, SERIAL_NO_COLUMN_NAME)])
-    d2 = excel.parse_worksheet(wb, lambda ws: [ws.title,
-                                               excel.calc_worksheet_max_row(ws, NAME_COLUMN_NAME)])
-    assert len(d1) == len(d2), file
-
-    for i in range(len(d1)):
-        k1 = d1[i]
-        k2 = d2[i]
-        assert k1[1] == k2[1], file + ' ' + k1[0]
-
-
-def default_sort_key(title):
-    if title == SUMMARY_SHEET_NAME:
-        return datetime.datetime.strptime('1970', "%Y")
-    date, addr, operator = parse_sheet_name(title)
-    return date
+    # 验证表头是否正确
+    for ws in get_all_worksheets(wb):
+        assert get_cell_value(ws, 1, SERIAL_NO_COLUMN.idx) == SERIAL_NO_COLUMN.name, ws.title
+        assert get_cell_value(ws, 1, NAME_COLUMN.idx) == NAME_COLUMN.name, ws.title
+        assert get_cell_value(ws, 1, PHONE_COLUMN.idx) == PHONE_COLUMN.name, ws.title
+        assert get_cell_value(ws, 1, REMARK_COLUMN.idx) == REMARK_COLUMN.name, ws.title
+        assert get_cell_value(ws, 1, RESULT_COLUMN.idx) == RESULT_COLUMN.name, ws.title
 
 
 def sort_xlsx(wb):
-    excel.sort_by_title(wb, lambda x: default_sort_key(x.title))
+    def parse_sheet_name(sheet_name: str):
+        ss = sheet_name.split('-')
+        if not ss:
+            return '0'
+        date = datetime.datetime.strptime('2022.' + ss[0], "%Y.%m.%d")
+        address = ss[1]
+        operator = '未知' if len(ss) < 3 else ss[2]
 
+        return date, address, operator
 
-#
-# def generate_summary_file(files: str, out_file):
-#     sheet_datas = []
-#     for file in files:
-#         rows = excel.parse_worksheet(file,
-#                                      lambda ws: [ws.title, excel.get_worksheet_max_row(ws, SERIAL_NO_COLUMN_NAME)])
-#         if not rows:
-#             continue
-#
-#         rows.append(['', ''])
-#         rows.append(['总计', excel.get_total_rows(file, SERIAL_NO_COLUMN_NAME)])
-#         file_name = file if file.rindex('/') < 0 else file[file.rindex('/') + 1:]
-#         s = {
-#             'sheet_name': file_name,
-#             'head': ['点位', '数量'],
-#             'column_dimensions': [30, 10],
-#             'data': rows
-#         }
-#         sheet_datas.append(s)
-#     excel.write_workbook(out_file, sheet_datas)
+    def default_sort_key(title):
+        if title == SUMMARY_SHEET_NAME:
+            return datetime.datetime.strptime('1970', "%Y")
+        date, addr, operator = parse_sheet_name(title)
+        return date
+
+    sort_worksheets(wb, lambda x: default_sort_key(x.title))
 
 
 def remove_summary(wb):
-    excel.remove_workbook_sheet(wb, SUMMARY_SHEET_NAME)
+    remove_worksheet_by_name(wb, SUMMARY_SHEET_NAME)
+
+
+def calc_summary(ws):
+    total = 0
+    succeed = 0
+    for i in range(2, ws.max_row + 1):
+        name = get_cell_value(ws, i, NAME_COLUMN.idx)
+        phone = get_cell_value(ws, i, PHONE_COLUMN.idx)
+        result = get_cell_value(ws, i, RESULT_COLUMN.idx)
+
+        if not name and not phone:
+            continue
+        elif not name:
+            raise ValueError(f'[{ws.title}] ({NAME_COLUMN.name}-{i}) invalid cell {name}')
+        elif not phone:
+            raise ValueError(f'[{ws.title}] ({PHONE_COLUMN.name}-{i}) invalid cell {phone}')
+
+        total = total + 1
+
+        if str(result).strip() == '1':
+            succeed = succeed + 1
+        elif result is None:
+            pass
+        else:
+            raise ValueError(f'[{ws.title}] ({RESULT_COLUMN.name}-{i}) invalid cell {result}')
+
+    return ws.title, total, succeed, total - succeed
 
 
 def generate_summary(wb):
-    sheet_datas = []
-    rows = excel.parse_worksheet(wb,
-                                 lambda ws: [ws.title, excel.calc_worksheet_max_row(ws, SERIAL_NO_COLUMN_NAME)])
-    if not rows:
+    result = parse_worksheets(wb, lambda ws: list(calc_summary(ws)))
+    if not result:
         return
 
-    rows.append(['', ''])
-    rows.append(['总计', excel.get_all_worksheet_total_rows(wb, SERIAL_NO_COLUMN_NAME)])
-    s = {
-        'sheet_name': SUMMARY_SHEET_NAME,
-        'head': ['点位', '数量'],
-        'column_dimensions': [30, 10],
-        'data': rows
-    }
-    sheet_datas.append(s)
-    excel.add_worksheet(wb, sheet_datas)
+    s1 = sum([int(k[1]) for k in result])
+    s2 = sum([int(k[2]) for k in result])
+    s3 = sum([int(k[3]) for k in result])
 
+    result.append(['', '', '', ''])
+    result.append(['总计', s1, s2, s3])
 
-#
-# def generate_personal_performance(files: str, out_file):
-#     sheet_datas = []
-#     operator_map = {}
-#     for file in files:
-#         rows = excel.parse_worksheet(file,
-#                                      lambda ws: [ws.title, excel.get_worksheet_max_row(ws, SERIAL_NO_COLUMN_NAME)])
-#         if not rows:
-#             continue
-#
-#         file_name = file if file.rindex('/') < 0 else file[file.rindex('/') + 1:]
-#         tmp_rows = []
-#         for r in rows:
-#             sheet_name = r[0]
-#             total_num = r[1]
-#             date, address, operator = parse_sheet_name(sheet_name)
-#             week = date.strftime('%W')
-#             tmp_row = [file_name[0:file_name.rindex('.')], sheet_name, total_num, week]
-#             if operator in operator_map.keys():
-#                 operator_map.get(operator).append(tmp_row)
-#             else:
-#                 operator_map[operator] = [tmp_row]
-#             tmp_rows.append(tmp_row)
-#
-#     for k, v in operator_map.items():
-#         v.sort(key=lambda x: default_sort_key(x[1]))
-#
-#         data = []
-#         data.append(v[0])
-#         for i in range(1, len(v), 1):
-#             week0 = v[i - 1][3]
-#             week1 = v[i][3]
-#             if week0 != week1:
-#                 data.append(['', '', '', ''])
-#             data.append(v[i])
-#
-#         s = {
-#             'sheet_name': k,
-#             'head': ['支行', '点位', '数量', '第几周', ],
-#             'column_dimensions': [20, 30, 10, 10],
-#             'data': data
-#         }
-#         sheet_datas.append(s)
-#     excel.write_workbook(out_file, sheet_datas)
-
-
-def print_xlsx_rows(wb: str):
-    total_row = 0
-    for sheet_name in wb.sheetnames:
-        ws = wb[sheet_name]
-        row = excel.calc_worksheet_max_row(ws, SERIAL_NO_COLUMN_NAME, True)
-        total_row += row
-    print(file + ', 共有: ' + str(total_row))
+    add_worksheet(wb, [
+        {
+            'sheet_name': SUMMARY_SHEET_NAME,
+            'head': ['点位', '总数', '已领数量', '未领数量'],
+            'column_dimensions': [30, 10, 10, 10],
+            'data': result
+        }
+    ])
 
 
 if __name__ == "__main__":
-    d = '/Users/kun/Desktop/云文档/市民卡地推项目的副本/市民卡业务-邵祥'
+    d = '/Users/kun/Desktop/云文档/市民卡地推项目/市民卡业务-邵祥'
 
     files = list_dir_files(d, ['.xlsx'], ['汇总.xlsx', '绩效.xlsx'])
 
     for file in files:
-        wb = excel.load_workbook(file)
+        print(f"process excel {file}")
+        wb = load_workbook(file)
         remove_summary(wb)
         validate_xlsx(wb)
-        print_xlsx_rows(wb)
         generate_summary(wb)
         sort_xlsx(wb)
-        excel.save_workbook(wb, file)
-
-    # generate_personal_performance(files, d + os.sep + '绩效.xlsx')
-    # recreate_xlsx_4_wenxin(files)
+        save_workbook(wb, file)

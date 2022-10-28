@@ -6,44 +6,14 @@ from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
-from defer import defer
 
-
-def _get_column_idx_by_head(ws: Worksheet, name: str, head_row_idx=1):
-    for i in range(1, ws.max_column + 1, 1):
-        c = ws.cell(head_row_idx, i).value
-        if c == name:
-            return i
-    return None
+######################################################
+# workbook
+######################################################
 
 
 def load_workbook(path: str):
     return openpyxl.load_workbook(path)
-
-
-def get_all_worksheets(wb):
-    return wb._sheets
-
-
-def calc_worksheet_max_row(ws: Worksheet, column_name: str, ignore_head=True) -> int:
-    count = 0
-    begin = 2 if ignore_head else 1
-    column_index = _get_column_idx_by_head(ws, column_name)
-    for i in range(begin, ws.max_row + 1, 1):
-        v = ws.cell(i, column_index).value
-        if v is not None:
-            count = count + 1
-    return count
-
-
-def calc_worksheet_column_one_non_blank_value(ws: Worksheet, column_name: str, ignore_head=True):
-    begin = 2 if ignore_head else 1
-    column_index = _get_column_idx_by_head(ws, column_name)
-    for i in range(begin, ws.max_row + 1, 1):
-        v = ws.cell(i, column_index).value
-        if v is not None:
-            return v
-    return None
 
 
 def close_workbook(wb: Workbook):
@@ -51,39 +21,34 @@ def close_workbook(wb: Workbook):
     pass
 
 
-def parse_worksheet(wb, sheet_parser: LambdaType) -> list:
+def save_workbook(wb, path):
+    wb.save(path)
+
+
+######################################################
+# worksheet
+######################################################
+
+def get_all_worksheets(wb):
+    return wb._sheets
+
+
+def parse_worksheets(wb, sheet_parser: LambdaType) -> list:
     result = []
     for sheet_name in wb.sheetnames:
         r = sheet_parser(wb[sheet_name])
-        assert isinstance(r, list)
+        # assert isinstance(r, list)
         result.append(r)
     return result
 
 
-def get_cell_value(ws, row: int, column: int):
-    assert isinstance(ws, Worksheet)
-    return ws.cell(row, column).value
-
-
-def get_all_worksheet_total_rows(wb: str, column_name: str, ignore_head=True):
-    total_row = 0
-    for sheet_name in wb.sheetnames:
-        row = calc_worksheet_max_row(wb[sheet_name], column_name, ignore_head)
-        total_row += row
-    return total_row
-
-
-def sort_by_title(wb, sort_key):
+def sort_worksheets(wb, sort_key):
     wb._sheets.sort(key=sort_key)
 
 
-def remove_workbook_sheet(wb, sheet_name):
+def remove_worksheet_by_name(wb, sheet_name):
     if wb and sheet_name in wb.sheetnames:
         wb.remove(wb[sheet_name])
-
-
-def save_workbook(wb, path):
-    wb.save(path)
 
 
 def copy_workbook(path: str, save_path: str, copy_image=True):
@@ -160,3 +125,42 @@ def add_worksheet(wb, sheet_datas: list):
         for row_index, row_item in enumerate(data):
             for col_index, col_item in enumerate(row_item):
                 ws.cell(row=row_index + 1, column=col_index + 1, value=col_item)
+
+
+######################################################
+# cell
+######################################################
+
+def get_cell_value(ws, row: int, column: int):
+    assert isinstance(ws, Worksheet)
+    return ws.cell(row, column).value
+
+
+def get_row_value(ws, row):
+    if row > ws.max_row:
+        return None
+    res = []
+    for i in range(0, ws.max_cloumn):
+        res.append(ws.cell(row, i))
+    return res
+
+
+######################################################
+# mix
+######################################################
+def _get_column_idx_by_head(ws: Worksheet, name: str, head_row_idx=1):
+    for i in range(1, ws.max_column + 1, 1):
+        c = ws.cell(head_row_idx, i).value
+        if c == name:
+            return i
+    return None
+
+
+def count_column_non_blank_rows(ws: Worksheet, column_idx: int, ignore_head=True) -> int:
+    count = 0
+    begin = 2 if ignore_head else 1
+    for i in range(begin, ws.max_row + 1, 1):
+        v = ws.cell(i, column_idx).value
+        if v is not None:
+            count = count + 1
+    return count

@@ -1,4 +1,9 @@
+import json
 import os
+
+
+def obj2json(obj: object, indent=4) -> str:
+    return json.dumps(obj, default=lambda o: o.__dict__, sort_keys=True, indent=indent, ensure_ascii=False)
 
 
 def check_file(file_name: str, filter_exts: list, exclude_exts: list):
