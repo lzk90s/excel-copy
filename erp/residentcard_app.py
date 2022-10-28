@@ -16,7 +16,7 @@ PHONE_COLUMN = TableColumnDefine(3, '电话')
 REMARK_COLUMN = TableColumnDefine(4, '备注')
 RESULT_COLUMN = TableColumnDefine(5, '是否领卡')
 
-SUMMARY_SHEET_NAME = '0汇总'
+SUMMARY_SHEET_NAME = '汇总'
 
 
 def validate_xlsx(wb):
@@ -32,8 +32,7 @@ def validate_xlsx(wb):
 def sort_xlsx(wb):
     def parse_sheet_name(sheet_name: str):
         ss = sheet_name.split('-')
-        if not ss:
-            return '0'
+        assert ss
         date = datetime.datetime.strptime('2022.' + ss[0], "%Y.%m.%d")
         address = ss[1]
         operator = '未知' if len(ss) < 3 else ss[2]
