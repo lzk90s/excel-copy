@@ -15,6 +15,7 @@ NAME_COLUMN = TableColumnDefine(2, '姓名')
 PHONE_COLUMN = TableColumnDefine(3, '电话')
 REMARK_COLUMN = TableColumnDefine(4, '备注')
 RESULT_COLUMN = TableColumnDefine(5, '是否领卡')
+FAIL_COLUMN = TableColumnDefine(6, '是否失败')
 
 SUMMARY_SHEET_NAME = '汇总'
 
@@ -59,6 +60,7 @@ def calc_summary(ws):
         name = get_cell_value(ws, i, NAME_COLUMN.idx)
         phone = get_cell_value(ws, i, PHONE_COLUMN.idx)
         result = get_cell_value(ws, i, RESULT_COLUMN.idx)
+        fail = get_cell_value(ws, i, FAIL_COLUMN)
 
         if not name and not phone:
             continue
@@ -69,14 +71,17 @@ def calc_summary(ws):
 
         total = total + 1
 
+        if str(result).strip() == '1' and str(fail).strip() == '1':
+            raise ValueError('invalid content')
+
         if str(result).strip() == '1':
-            succeed = succeed + 1
+            succeed  = succeed + 1
         elif result is None:
             pass
         else:
             raise ValueError(f'[{ws.title}] ({RESULT_COLUMN.name}-{i}) invalid cell {result}')
 
-    return ws.title, total, succeed, total - succeed
+    return ws.title, total, succeed, fail, total - succeed - fail
 
 
 def generate_summary(wb):
@@ -87,15 +92,16 @@ def generate_summary(wb):
     s1 = sum([int(k[1]) for k in result])
     s2 = sum([int(k[2]) for k in result])
     s3 = sum([int(k[3]) for k in result])
+    s4 = sum([int(k[4]) for k in result])
 
-    result.append(['', '', '', ''])
-    result.append(['总计', s1, s2, s3])
+    result.append(['', '', '', '', ''])
+    result.append(['总计', s1, s2, s3, s4])
 
     add_worksheet(wb, [
         {
             'sheet_name': SUMMARY_SHEET_NAME,
-            'head': ['点位', '总数', '已领数量', '未领数量'],
-            'column_dimensions': [30, 10, 10, 10],
+            'head': ['点位', '总数', '已领数量', '失败数量', '未领数量'],
+            'column_dimensions': [30, 10, 10, 10, 10],
             'data': result
         }
     ])
