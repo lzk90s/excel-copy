@@ -14,8 +14,8 @@ SERIAL_NO_COLUMN = TableColumnDefine(1, '序号')
 NAME_COLUMN = TableColumnDefine(2, '姓名')
 PHONE_COLUMN = TableColumnDefine(3, '电话')
 REMARK_COLUMN = TableColumnDefine(4, '备注')
-RESULT_COLUMN = TableColumnDefine(5, '是否领卡')
-FAIL_COLUMN = TableColumnDefine(6, '是否失败')
+SUCCEED_COLUMN = TableColumnDefine(5, '是否领卡')
+FAILED_COLUMN = TableColumnDefine(6, '是否失败')
 
 SUMMARY_SHEET_NAME = '汇总'
 
@@ -27,7 +27,7 @@ def validate_xlsx(wb):
         assert get_cell_value(ws, 1, NAME_COLUMN.idx) == NAME_COLUMN.name, ws.title
         assert get_cell_value(ws, 1, PHONE_COLUMN.idx) == PHONE_COLUMN.name, ws.title
         assert get_cell_value(ws, 1, REMARK_COLUMN.idx) == REMARK_COLUMN.name, ws.title
-        assert get_cell_value(ws, 1, RESULT_COLUMN.idx) == RESULT_COLUMN.name, ws.title
+        assert get_cell_value(ws, 1, SUCCEED_COLUMN.idx) == SUCCEED_COLUMN.name, ws.title
 
 
 def sort_xlsx(wb):
@@ -54,13 +54,14 @@ def remove_summary(wb):
 
 
 def calc_summary(ws):
-    total = 0
-    succeed = 0
+    total_count = 0
+    succeed_count = 0
+    failed_count = 0
     for i in range(2, ws.max_row + 1):
         name = get_cell_value(ws, i, NAME_COLUMN.idx)
         phone = get_cell_value(ws, i, PHONE_COLUMN.idx)
-        result = get_cell_value(ws, i, RESULT_COLUMN.idx)
-        fail = get_cell_value(ws, i, FAIL_COLUMN)
+        succeed = get_cell_value(ws, i, SUCCEED_COLUMN.idx)
+        failed = get_cell_value(ws, i, FAILED_COLUMN.idx)
 
         if not name and not phone:
             continue
@@ -69,19 +70,18 @@ def calc_summary(ws):
         elif not phone:
             raise ValueError(f'[{ws.title}] ({PHONE_COLUMN.name}-{i}) invalid cell {phone}')
 
-        total = total + 1
+        total_count = total_count + 1
 
-        if str(result).strip() == '1' and str(fail).strip() == '1':
+        if str(succeed).strip() == '1' and str(failed).strip() == '1':
             raise ValueError('invalid content')
 
-        if str(result).strip() == '1':
-            succeed  = succeed + 1
-        elif result is None:
-            pass
-        else:
-            raise ValueError(f'[{ws.title}] ({RESULT_COLUMN.name}-{i}) invalid cell {result}')
+        if str(succeed).strip() == '1':
+            succeed_count  = succeed_count + 1
+        elif str(failed).strip() == '1':
+            failed_count = failed_count + 1
 
-    return ws.title, total, succeed, fail, total - succeed - fail
+    # 标题,总数,成功,失败,未领
+    return ws.title, total_count, succeed_count, failed_count, total_count - succeed_count - failed_count
 
 
 def generate_summary(wb):
