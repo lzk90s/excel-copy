@@ -12,9 +12,10 @@ from openpyxl.worksheet.worksheet import Worksheet
 ######################################################
 
 
-def load_workbook(path: str):
-    return openpyxl.load_workbook(path)
-
+def load_workbook(path: str) -> object:
+    wb = openpyxl.load_workbook(path)
+    wb.original_path = path
+    return wb
 
 def close_workbook(wb: Workbook):
     wb.close()
@@ -29,7 +30,7 @@ def save_workbook(wb, path):
 # worksheet
 ######################################################
 
-def get_all_worksheets(wb):
+def get_all_worksheets(wb) -> list:
     return wb._sheets
 
 
@@ -134,6 +135,10 @@ def add_worksheet(wb, sheet_datas: list):
 def get_cell_value(ws, row: int, column: int):
     assert isinstance(ws, Worksheet)
     return ws.cell(row, column).value
+
+
+def set_cell_value(ws: Worksheet, row: int, colum: int, value):
+    ws.cell(row, colum).value = value
 
 
 def get_row_value(ws, row):

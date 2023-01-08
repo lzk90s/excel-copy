@@ -23,11 +23,11 @@ SUMMARY_SHEET_NAME = '汇总'
 def validate_xlsx(wb):
     # 验证表头是否正确
     for ws in get_all_worksheets(wb):
-        assert get_cell_value(ws, 1, SERIAL_NO_COLUMN.idx) == SERIAL_NO_COLUMN.name, ws.title
-        assert get_cell_value(ws, 1, NAME_COLUMN.idx) == NAME_COLUMN.name, ws.title
-        assert get_cell_value(ws, 1, PHONE_COLUMN.idx) == PHONE_COLUMN.name, ws.title
-        assert get_cell_value(ws, 1, REMARK_COLUMN.idx) == REMARK_COLUMN.name, ws.title
-        assert get_cell_value(ws, 1, SUCCEED_COLUMN.idx) == SUCCEED_COLUMN.name, ws.title
+        assert get_cell_value(ws, 1, SERIAL_NO_COLUMN.idx) == SERIAL_NO_COLUMN.name, f'{wb.original_path} - {ws.title}'
+        assert get_cell_value(ws, 1, NAME_COLUMN.idx) == NAME_COLUMN.name, f'{wb.original_path} - {ws.title}'
+        # assert get_cell_value(ws, 1, PHONE_COLUMN.idx) == PHONE_COLUMN.name, f'${wb.original_path} - ${ws.title}'
+        # assert get_cell_value(ws, 1, REMARK_COLUMN.idx) == REMARK_COLUMN.name, ws.title
+        # assert get_cell_value(ws, 1, SUCCEED_COLUMN.idx) == SUCCEED_COLUMN.name, ws.title
 
 
 def sort_xlsx(wb):
@@ -67,8 +67,8 @@ def calc_summary(ws):
             continue
         elif not name:
             raise ValueError(f'[{ws.title}] ({NAME_COLUMN.name}-{i}) invalid cell {name}')
-        elif not phone:
-            raise ValueError(f'[{ws.title}] ({PHONE_COLUMN.name}-{i}) invalid cell {phone}')
+        # elif not phone:
+        #     raise ValueError(f'[{ws.title}] ({PHONE_COLUMN.name}-{i}) invalid cell {phone}')
 
         total_count = total_count + 1
 
@@ -108,7 +108,7 @@ def generate_summary(wb):
 
 
 if __name__ == "__main__":
-    d = '/Users/kun/Desktop/云文档/市民卡地推项目/市民卡业务-邵祥'
+    d = '/Users/kun/Desktop/云文档/市民卡业务-王峥光'
 
     files = list_dir_files(d, ['.xlsx'], ['汇总.xlsx', '绩效.xlsx'])
 
