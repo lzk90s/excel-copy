@@ -17,6 +17,9 @@ def check_file(file_name: str, filter_exts: list, exclude_exts: list):
 
 
 def list_dir_files(dir_path: str, filter_exts: list, exclude_exts: list):
+    if os.path.isfile(dir_path):
+        return [dir_path]
+
     if not os.path.isdir(dir_path):
         print("create directory " + dir_path)
         os.mkdir(dir_path)

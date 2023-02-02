@@ -108,7 +108,7 @@ def generate_summary(wb):
 
 
 if __name__ == "__main__":
-    d = '/Users/kun/Desktop/云文档/市民卡地推项目/市民卡业务-邵祥'
+    d = '/Users/kun/Desktop/云文档/市民卡地推项目/市民卡业务-邵祥/2022延安路支行最终数据.xlsx'
 
     files = list_dir_files(d, ['.xlsx'], ['汇总.xlsx', '绩效.xlsx'])
 
